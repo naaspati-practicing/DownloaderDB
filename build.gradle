@@ -1,0 +1,26 @@
+/*
+apply plugin: 'java'
+apply plugin: 'application'
+
+*/
+apply plugin: 'java-library'
+
+repositories {
+    jcenter()
+}
+
+// mainClassName = 'DownloaderDBMain'
+
+
+dependencies {
+   compile files('myutils.jar')
+   compile 'org.json:json:20180130'
+ }
+
+/*
+run {
+    environment['JSON_TOSTRING']=true
+    environment['DEFAULT_LOGGING_FILE']=true   
+}
+*/
+
