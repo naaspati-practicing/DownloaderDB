@@ -97,7 +97,7 @@ public class DChapterImpl extends Utils implements IDChapter, JSONString {
 		if(DownloaderDB.JSON_TOSTRING)
 			return toJSONString();
 
-		return "DChapterImpl [number=" + number + ", title=" + title + ", source=" + source + ", target=" + target
+		return getClass().getSimpleName()+" [number=" + number + ", title=" + title + ", source=" + source + ", target=" + target
 				+ ", url=" + url + ", status=" + status + "]";
 	}
 

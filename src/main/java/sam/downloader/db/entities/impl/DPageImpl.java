@@ -37,14 +37,17 @@ public class DPageImpl extends Utils implements IDPage, JSONString {
     @Override public String getImgUrl(){ return this.img_url; }
     @Override public String getError(){ return this.error; }
     @Override public DStatus getStatus(){ return this.status; }
-
+    
 	@Override
 	public String toString() {
 		if(DownloaderDB.JSON_TOSTRING)
 			return toJSONString();
 		
-		return "DPageImpl [order=" + order + ", page_url=" + page_url + ", img_url=" + img_url + ", status=" + status
-				+ "]";
+		return getClass().getSimpleName()+" [order=" + order + ", page_url=" + page_url + ", img_url=" + img_url + ", status=" + status + "]";
+	}
+	@Override
+	public void setImgUrl(String img_url) {
+		this.img_url = img_url;
 	}
 
 	@Override

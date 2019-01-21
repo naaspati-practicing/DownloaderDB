@@ -91,7 +91,7 @@ public class DMangaImpl extends Utils implements IDManga, JSONString {
 		if(DownloaderDB.JSON_TOSTRING)
 			return toJSONString();
 
-		return "DMangaImpl [manga_id=" + manga_id + ", dir_name=" + dir_name + ", manga_name=" + manga_name + ", url="
+		return getClass().getSimpleName()+" [manga_id=" + manga_id + ", dir_name=" + dir_name + ", manga_name=" + manga_name + ", url="
 		+ url + ", status=" + status + "]";
 	}
 	@Override
