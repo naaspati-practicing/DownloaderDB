@@ -11,6 +11,7 @@ repositories {
 
 // mainClassName = 'DownloaderDBMain'
 
+version = '.03'
 
 dependencies {
    compile files('myutils.jar')

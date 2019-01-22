@@ -1,16 +1,13 @@
 package sam.downloader.db.entities.meta;
 
 import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.Writer;
 
 import sam.reference.WeakAndLazy;
+import sam.string.StringWriter2;
 
 public interface ErrorSetter {
-	static WeakAndLazy<Object[]> keep = new WeakAndLazy<>(() -> {
-		StringWriter sw = new StringWriter();
-		PrintWriter pw = new PrintWriter(sw);
-		return new Object[] {sw, pw};
-	});  
+	static WeakAndLazy<StringWriter2> keep = new WeakAndLazy<>(StringWriter2::new);  
 	
 	default void setFailed(String msg, Throwable e) {
 		setError(msg, e, DStatus.FAILED);
@@ -25,18 +22,28 @@ public interface ErrorSetter {
 			setError(msg, status);
 		else {
 			String s ;
-			synchronized(ErrorSetter.class) {
-				Object[] o = keep.get();
+			synchronized(keep) {
+				StringWriter2 sw = keep.get();
+				sw.clear();
 				
-				StringWriter sw = (StringWriter) o[0];
-				PrintWriter pw = (PrintWriter) o[1];
-				sw.getBuffer().setLength(0);
-				
-				if(msg != null) {
-					pw.println(msg);
-					pw.println();
+				if(this instanceof IDPage) {
+					IDPage p = (IDPage) this;
+					sw.append("page_url: ").append(p.getPageUrl()).append('\n');
+					sw.append("img_url: ").append(p.getImgUrl()).append('\n');
 				}
-				e.printStackTrace(pw);
+				if(this instanceof IDChapter) {
+					IDChapter p = (IDChapter) this;
+					sw.append("url: ").append(p.getUrl()).append('\n');
+				}
+				if(this instanceof IDManga) {
+					IDManga p = (IDManga) this;
+					sw.append("url: ").append(p.getUrl()).append('\n');
+				}
+				
+				if(msg != null) 
+					sw.append(msg).append('\n');
+				
+				e.printStackTrace(new PrintWriter(sw));
 				s = sw.toString();
 			}
 			setError(s, status);
