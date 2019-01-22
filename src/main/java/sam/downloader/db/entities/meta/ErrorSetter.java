@@ -1,7 +1,6 @@
 package sam.downloader.db.entities.meta;
 
 import java.io.PrintWriter;
-import java.io.Writer;
 
 import sam.reference.WeakAndLazy;
 import sam.string.StringWriter2;
