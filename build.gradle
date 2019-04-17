@@ -14,7 +14,8 @@ repositories {
 version = '.03'
 
 dependencies {
-   compile files('myutils.jar')
+    compile files('myutils.jar')
+   implementation 'org.slf4j:slf4j-api:1.8.0-beta4'
    compile 'org.json:json:20180130'
  }
 

@@ -23,7 +23,9 @@ import static sam.downloader.db.entities.impl.DBMeta.TITLE;
 import static sam.downloader.db.entities.impl.DBMeta.URL;
 import static sam.downloader.db.entities.impl.DBMeta.VOLUME;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.PreparedStatement;
@@ -32,17 +34,17 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Logger;
 
-import sam.collection.IterableWithSize;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sam.downloader.db.entities.meta.IDChapter;
 import sam.downloader.db.entities.meta.IDManga;
 import sam.downloader.db.entities.meta.IDPage;
-import sam.io.serilizers.StringReader2;
-import sam.logging.MyLoggerFactory;
-import sam.myutils.MyUtilsException;
+import sam.io.IOUtils;
 import sam.myutils.System2;
 import sam.reference.WeakAndLazy;
 import sam.sql.sqlite.SQLiteDB;
@@ -51,7 +53,7 @@ public class DownloaderDB {
 	public static final boolean JSON_TOSTRING = System2.lookupBoolean("JSON_TOSTRING", false);
 
 	private final Path dbpath;
-	private static final Logger LOGGER = MyLoggerFactory.logger(DownloaderDB.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DownloaderDB.class);
 
 	private static String DCHAPTER_TABLE_NAME;
 	private static String DPAGE_TABLE_NAME;
@@ -66,7 +68,18 @@ public class DownloaderDB {
 	private int index() {
 		return _index;
 	}
-	private final WeakAndLazy<String> sql_base =  new WeakAndLazy<>(() -> MyUtilsException.noError(() -> StringReader2.reader().source(getClass().getResourceAsStream("sql.sql")).read()));
+	private final WeakAndLazy<String> sql_base =  new WeakAndLazy<>(this::readSql);
+	
+	private String readSql() {
+		try(InputStream is = DownloaderDB.class.getResourceAsStream("sql.sql");
+				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+				) {
+			IOUtils.pipe(is, bos, new byte[100]);
+			return bos.toString("utf-8");
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 
 	private void init(int index) {
 		if(index < 1)
@@ -79,7 +92,7 @@ public class DownloaderDB {
 
 		CREATE_SQL = String.format(sql_base.get(), index);
 		_index = index;
-		LOGGER.fine(() -> "INDEX: "+index);
+		LOGGER.debug("INDEX: {}", index);
 	}
 
 	private int maxIndex(SQLiteDB db) throws SQLException {
@@ -92,14 +105,14 @@ public class DownloaderDB {
 	public synchronized <E extends IDManga> List<E> read(DownloaderDBFactory factory) throws SQLException {
 		List<E> mangas = new ArrayList<>();
 		if(Files.notExists(dbpath)) {
-			LOGGER.warning("DB not found: "+dbpath);
+			LOGGER.warn("DB not found: {}", dbpath);
 			return mangas;
 		}
 		try(SQLiteDB db = new SQLiteDB(dbpath)) {
 
 			ResultSet rs0 = db.executeQuery("SELECT * FROM "+TABLES_TABLE_NAME+" WHERE "+INDEX+"=(SELECT MAX("+INDEX+") FROM "+TABLES_TABLE_NAME+")");
 			if(!rs0.next()) {
-				LOGGER.warning("DB isEmpty: "+dbpath);
+				LOGGER.warn("DB isEmpty: {}", dbpath);
 				return mangas;
 			}
 			init(rs0.getInt(INDEX));
@@ -210,7 +223,7 @@ public class DownloaderDB {
 
 			db.executeUpdate(CREATE_SQL);
 
-			IterableWithSize<? extends IDManga> data = IterableWithSize.wrap(mangas);
+			Iterator<? extends IDManga> data = mangas.iterator();
 			if(!data.hasNext()) return new int[3];
 
 			StringBuilder sink = new StringBuilder(50);
@@ -222,7 +235,8 @@ public class DownloaderDB {
 					PreparedStatement chapterP = db.prepareStatement(insertSQL(DCHAPTER_TABLE_NAME, sink, INDEX,MANGA_ID,NUMBER,TITLE, VOLUME,SOURCE,TARGET,URL,ERROR,STATUS, COUNT));
 					PreparedStatement pageP = db.prepareStatement(insertSQL(DPAGE_TABLE_NAME, sink, CHAPTER_INDEX,ORDER,PAGE_URL,IMG_URL,ERROR,STATUS));
 					) {
-				for (IDManga manga : data) {
+				while (data.hasNext()) {
+					IDManga manga = (IDManga) data.next();
 					insertManga(manga, mangaP);
 					mangasCount++;
 
